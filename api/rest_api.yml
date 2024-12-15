@@ -1,0 +1,482 @@
+openapi: 3.0.1
+info:
+  title: Travel social network API
+  description: API for managing & getting travel social network data
+  version: 1.0.0
+servers:
+  - url: https://uat.api.travel-network.com
+    description: uat
+  - url: https://api.travel-network.com
+    description: prod
+tags:
+  - name: PostsManagementController
+paths:
+  /v1/posts:
+    post:
+      summary: Method for publishing a new post
+      tags:
+        - PostsManagementController
+      security:
+        - BasicAuth: [ ]
+      parameters:
+        - name: userId
+          in: header
+          description: Identifier of the user who publishes the post
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 12345
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - postPhoto
+                - postMetaData
+              properties:
+                postPhoto:
+                  type: string
+                  description: The file that contains photo
+                  format: binary
+                postMetaData:
+                  $ref: '#/components/schemas/PostMetaData'
+        required: true
+      responses:
+        '201':
+          description: Created
+        '400':
+            description: Bad request
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+    get:
+      summary: Method for getting posts
+      tags:
+        - PostsManagementController
+      security:
+        - BasicAuth: [ ]
+      parameters:
+        - name: postIds
+          description: Getting posts with specific identifiers
+          required: false
+          in: query
+          schema:
+            type: integer
+            format: int64
+            example: 4456
+        - name: offset
+          description: Amount of posts that should be skipped before fetching posts to return
+          required: false
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          example: 0
+        - name: limit
+          description: The maximum amount of posts to return in the response
+          required: false
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 10
+            maximum: 50
+          example: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostsArray'
+        '204':
+          description: No content
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+  /v1/posts:search:
+    post:
+      summary: Method for searching posts
+      tags:
+        - PostsManagementController
+      security:
+        - BasicAuth: [ ]
+      parameters:
+        - name: offset
+          description: Amount of posts that should be skipped before fetching posts to return
+          required: false
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          example: 0
+        - name: limit
+          description: The maximum amount of posts to return in the response
+          required: false
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 10
+            maximum: 50
+          example: 10
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                authorIds:
+                  description: Filter posts by author identifiers
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+                    example: 12345
+                  maxItems: 100
+                subsriberIds:
+                  description: Filter posts by subsriber identifiers
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+                    example: 98123
+                  maxItems: 100
+                locationIds:
+                  description: Filter posts by location identifiers
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+                    example: 12
+                  maxItems: 100
+                onlyFamousLocations:
+                  description: Filter only those posts that connected to famous and popular locations
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostsSearchResult'
+        '204':
+          description: No content
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+  /v1/posts/{postId}/comments:
+    post:
+      summary: Method for publising a comment to the post
+      tags:
+        - PostsManagementController
+      security:
+        - BasicAuth: [ ]
+      parameters:
+        - name: postId
+          description: Identifier of the post to comment
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: userId
+          in: header
+          description: Identifier of the user who publishes the comment
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 67876
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              description: Comment content
+              maxLength: 600
+              example: "Nice story. Thank you. Subscribed!"
+        required: true
+      responses:
+        '201':
+          description: Created
+        '400':
+            description: Bad request
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+    get:
+      summary: Method for getting posts' comments
+      tags:
+        - PostsManagementController
+      security:
+        - BasicAuth: [ ]
+      parameters:
+        - name: postId
+          description: Identifier of the post to get comments
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 45621
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentsArray'
+        '204':
+          description: No content
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+  /v1/posts/{postId}:like: 
+    post:
+      summary: Method for giving 'like' to the post
+      tags:
+        - PostsManagementController
+      security:
+        - BasicAuth: [ ]
+      parameters:
+        - name: postId
+          description: Identifier of the post to like
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 99813
+        - name: userId
+          in: header
+          description: Identifier of the user who gives like
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 67876
+      responses:
+        '201':
+          description: Created
+        '400':
+            description: Bad request
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+    Error:
+      type: object
+      properties:
+        errorCode:
+          type: string
+        errorDescription:
+          type: string
+    PostMetaData:
+      type: object
+      required:
+        - description
+      properties:
+        description:
+          type: string
+          maxLength: 600
+          description: Description of the photo or the story that connected to the photo
+          example: "I visitied Beau Vallon a few months ago. It was a great adventure, and I totally recommend everybody to visit this gorgeous place."
+        geoLocation:
+          type: string
+          maxLength: 24
+          description: Coordinates of the place where the photo was taken
+          example: "-20.41889, 57.69528"
+    PostsSearchResult:
+      type: object
+      required:
+        - data
+        - count
+        - offset
+        - limit
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostsSearchResultItem'
+        count:
+          description: Amount of the available posts
+          type: integer
+          format: int64
+          example: 1
+        offset:
+          description: Offset that used for the current result page
+          type: integer
+          minimum: 0
+          default: 0
+          example: 0
+        limit:
+          description: Limit that used to the current result page
+          type: integer
+          default: 10
+          minimum: 10
+          maximum: 50
+          example: 10
+    PostsSearchResultItem:
+      type: object
+      properties:
+        postId:
+          type: integer
+          format: int64
+          example: 4456
+    PostsArray:
+      type: object
+      required:
+        - data
+        - count
+        - offset
+        - limit
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostItem'
+        count:
+          description: Amount of the available posts
+          type: integer
+          format: int64
+          example: 1
+        offset:
+          description: Offset that used for the current result page
+          type: integer
+          minimum: 0
+          default: 0
+          example: 0
+        limit:
+          description: Limit that used to the current result page
+          type: integer
+          default: 10
+          minimum: 10
+          maximum: 50
+          example: 10
+    PostItem:
+      type: object
+      required:
+        - userId
+        - postId
+        - postPhoto
+        - postMetaData
+        - likes
+        - createdAt
+      properties:
+        userId:
+          type: integer
+          format: int64
+          description: User identifier
+          example: 12345
+        postId:
+          type: integer
+          format: int64
+          example: 4456
+        postPhoto:
+          type: string
+          description: URL to the post photo
+          example: "https://assets.travel-network.com/12345/4456/img-01082024.png"
+        postMetaData:
+          $ref: '#/components/schemas/PostMetaData'
+        likes:
+          type: integer
+          format: int64
+          description: How many likes the post has
+          example: 12
+        createdAt:  
+          type: string
+          format: date-time
+          description: Date-time of post creation
+          example: "2024-07-22T06:35:35.084Z"
+    CommentsArray:
+      type: object
+      required:
+        - data
+        - count
+        - offset
+        - limit
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentItem'
+        count:
+          description: Amount of the available comments
+          type: integer
+          format: int64
+          example: 1
+        offset:
+          description: Offset that used for the current result page
+          type: integer
+          minimum: 0
+          default: 0
+          example: 0
+        limit:
+          description: Limit that used to the current result page
+          type: integer
+          default: 10
+          minimum: 10
+          maximum: 50
+          example: 10
+    CommentItem:
+      type: object
+      required:
+        - userId
+        - comment
+        - createdAt
+      properties:
+        userId:
+          type: integer
+          format: int64
+          description: User identifier
+          example: 56832
+        comment:
+          type: string
+          example: "Hey! Nice post! Thanks for sharing."
+        createdAt:  
+          type: string
+          format: date-time
+          description: Date-time of post creation
+          example: "2024-09-22T06:35:35.084Z"
