@@ -24,6 +24,7 @@ Table comments {
   post_id integer
   user_id integer
   body text [note: 'Content of the comment']
+  reply_comment_id integer
   created_at timestamp
 }
 
